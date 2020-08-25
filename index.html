@@ -1,0 +1,249 @@
+<!--
+
+<!DOCTYPE html>
+<html>
+    
+    <head>
+    <meta charset="utf-8">
+    <title>JS</title>
+    <link rel="stylesheet" href="css/style.css">
+
+    <script src="script.js"></script>
+    <script src="https://d3js.org/d3-dsv.v1.min.js"></script>
+    <script src="https://d3js.org/d3-fetch.v1.min.js"></script>
+
+    <script>
+        let threshold = 0.7;
+
+        d3.csv("/data/experience_results.csv", function(d) {
+        return {
+            label: d.label,
+            label_confidence: d.label_confidence,
+            url: d.url,
+            msid: d.msid
+        };
+        }).then(function(data) {}
+        filtered = data.filter(function(d) {
+            return ((d.label == 0 || d.label == 1) && d.label_confidence >= threshold)
+        }) for (var i = 0; i < data.length; i++) {
+            console.log(filtered[i]);
+        }
+        console.log(filtered.length);
+        });
+    </script>
+</head>
+
+<body>
+
+</body>
+
+</html>
+-->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <link rel="stylesheet" href="css/style.css">
+    <script src="script.js"></script>
+    <script src="https://d3js.org/d3-dsv.v1.min.js"></script>
+    <script src="https://d3js.org/d3-fetch.v1.min.js"></script>
+    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js"></script>
+</head>
+
+<body>
+    Upload a csv file
+    <br>
+    <input type="file" id="getFile" accept="csv" onchange="handleFiles(this.files)">
+    <br><br>
+
+
+
+    label:
+    <!--    <select id="label" onChange="datafilter()">-->
+
+    <select id="label">
+        <option value="1">1</option>
+        <option value="0">0</option>
+    </select>
+
+    threshold:
+    <!--    <select id="threshold" onChange="thresholdFilter()">-->
+    <select id="threshold">
+        <option value=1>Above 0.7</option>
+        <option value=0>Below 0.7</option>
+    </select>
+
+    <button class="button" onclick="myFunction()">Filter</button>
+    <br><br>
+    <iframe name="iFrameName" class="frame" width="700" ; height="300" src=""></iframe>
+    
+    <div id="viewData">
+        <div id="siteData"></div>
+        <div id="siteCount"></div>
+    </div>
+
+    <br>
+    Is the site "category"?:
+    <input id="ChooseYes" type="radio" name="category" value="1">Yes
+    <input id="ChooseNo" type="radio" name="category" value="0">No
+
+    <br>
+    <label for="Comments">Comments:</label>
+    <input type="text" id="comments" name="comments" />
+
+    <br>
+    <button id="next" class="button" onclick="changeUrl()">Next</button>
+
+    <!--    <div id="siteCount"></div>-->
+
+    <button class="button" id="csv" onclick="tocsv()">Export to csv</button>
+
+
+
+
+
+
+    <script type="text/javascript">
+        //        var url = prompt("Enter the path to the csv file", '');
+        //load csv and copy to global variable
+        d3.csv('/data/exp_res.csv', function(csv) {
+            data = csv;
+            fullDs = data;
+            //filter csv
+            thresholdFilter();
+            const headers = Object.keys(data[0])
+            console.log(headers.join())
+        });
+
+        var fullDs;
+        var THRESHOLD = 0.7;
+        var currentUrl = 0;
+        var allResults = [];
+
+
+        function myFunction() {
+            filterData = datafilter();
+            thresholdFilter(filterData);
+
+        }
+
+        function datafilter(d) {
+            //filter out the test questions
+            data = fullDs;
+            data = data.filter(function(d) {
+                return d._golden == "FALSE";
+            });
+
+            var sector = document.getElementById("label");
+            var label = sector.options[sector.selectedIndex].value;
+            console.log(label);
+            data = data.filter(function(d) {
+                return d.label == label;
+            });
+            return data;
+        }
+
+        function thresholdFilter(d) {
+            var sector = document.getElementById("threshold");
+            var threshold = sector.options[sector.selectedIndex].value;
+
+            if (threshold == 1) {
+                console.log("Above 0.7");
+                data = data.filter(function(data) {
+                    return data.value >= 0.7;
+                });
+                console.log(data);
+                return data;
+            } else {
+                console.log("Below 0.7");
+                data = data.filter(function(data) {
+                    return data.value <= 0.7;
+                });
+                console.log(data);
+                return data.name;
+            }
+        }
+
+        function changeUrl() {
+            var site = data[currentUrl].url;
+            console.log(data[currentUrl].url, data[currentUrl].value, data[currentUrl].label);
+            document.getElementsByName('iFrameName')[0].src = site;
+            document.getElementById("siteData").innerHTML = "";
+            document.getElementById("siteData").innerHTML += "Label: " + data[currentUrl].label + "     Label Confidence: " + data[currentUrl].value;
+            document.getElementById("siteCount").innerHTML = "";
+            document.getElementById("siteCount").innerHTML += "Site count: " + currentUrl;
+
+            if (document.getElementById("ChooseYes").checked) {
+                rate_value = document.getElementById("ChooseYes").value;
+            } else if (document.getElementById("ChooseNo").checked) {
+                rate_value = document.getElementById("ChooseNo").value;
+            } else {
+                rate_value = "";
+            }
+            var results = [];
+            var input = document.getElementById("comments").value;
+            results.push(rate_value, input);
+            allResults.push(results);
+            console.log(results);
+            data[currentUrl].new_label = rate_value;
+            data[currentUrl].comments = input;
+
+
+            currentUrl++;
+            // Clearing the values from the comments and radios
+            document.getElementById('comments').value = '';
+            document.getElementById("ChooseYes").checked = false;
+            document.getElementById("ChooseNo").checked = false;
+        }
+
+
+        function displayRadioValue() {
+            document.getElementById("result").innerHTML = "";
+            var ele = document.getElementsByTagName('input');
+            console.log(ele);
+
+            for (i = 0; i < ele.length; i++) {
+
+                if (ele[i].type = "radio") {
+
+                    if (ele[i].checked)
+                        document.getElementById("result").innerHTML += ele[i].checked;
+                }
+            }
+        }
+
+        // Export the data to csv
+        //------------------------------------------------------------------
+
+        function convertToCSV(arr) {
+            const array = [Object.keys(arr[0])].concat(arr)
+
+            return array.map(it => {
+                return Object.values(it).toString()
+            }).join('\n')
+        }
+
+        function tocsv() {
+            results_filename = 'results.csv';
+            document.getElementById("csv");
+            csv = convertToCSV(fullDs);
+            console.log(csv);
+            if (!csv.match(/^data:text\/csv/i)) {
+                csv = 'data:text/csv;charset=utf-8,' + csv;
+            }
+            var data = encodeURI(csv);
+
+            var link = document.createElement('a');
+            link.setAttribute('href', data);
+            link.setAttribute('download', results_filename);
+            link.click();
+        }
+
+    </script>
+
+
+</body>
+
+</html>
